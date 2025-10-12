@@ -13,18 +13,20 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="%23e3f2fd"/><circle cx="200" cy="150" r="80" fill="%23bbdefb" opacity="0.3"/><circle cx="800" cy="200" r="60" fill="%2390caf9" opacity="0.2"/><circle cx="1000" cy="600" r="100" fill="%2364b5f6" opacity="0.25"/><circle cx="300" cy="650" r="70" fill="%2342a5f5" opacity="0.2"/></svg>');
+  background-image: url('../img/background.jpg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   z-index: -1;
+  opacity: 0.6;
 }
 
 .container {
-  display: flex;
+  /* display: flex; */
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 20px;
+  padding: 30px 80px 30px 80px;
 }
 
 .joke-card {
@@ -94,7 +96,7 @@ h1 {
 }
 
 button {
-  background-color: #00bcd4;
+  background-color: #c4a700;
   color: white;
   border: none;
   padding: 15px 30px;
@@ -106,9 +108,9 @@ button {
 }
 
 button:hover {
-  background-color: #00acc1;
+  background-color: #c4a700;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+  box-shadow: 0 4px 12px rgba(212, 167, 0, 0.3);
 }
 
 button:disabled {
