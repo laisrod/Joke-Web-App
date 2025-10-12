@@ -1,60 +1,119 @@
 body {
   font-family: Arial, sans-serif;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  position: relative;
+  background-color: #f8f9fa;
 }
+
+.background-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="%23e3f2fd"/><circle cx="200" cy="150" r="80" fill="%23bbdefb" opacity="0.3"/><circle cx="800" cy="200" r="60" fill="%2390caf9" opacity="0.2"/><circle cx="1000" cy="600" r="100" fill="%2364b5f6" opacity="0.25"/><circle cx="300" cy="650" r="70" fill="%2342a5f5" opacity="0.2"/></svg>');
+  background-size: cover;
+  background-position: center;
+  z-index: -1;
+}
+
 .container {
-  background-color: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(144, 26, 132, 0.1);
-  text-align: center;
-  margin: 100px auto;
-  border: 1px solid #d052a6;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(144, 26, 132, 0.1);
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
 }
+
+.joke-card {
+  background-color: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+}
+
 h1 {
   color: #333;
   margin-bottom: 30px;
+  font-size: 24px;
+  font-weight: 600;
 }
+
 .joke-container {
-  min-height: 200px;
+  min-height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 30px 0;
   padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  border-left: 4px solid #af4c8e;
 }
+
 .joke-text {
   font-size: 18px;
   line-height: 1.6;
   color: #555;
+  font-style: italic;
 }
+
+.joke-text::before {
+  content: '"';
+  font-size: 24px;
+  color: #999;
+}
+
+.joke-text::after {
+  content: '"';
+  font-size: 24px;
+  color: #999;
+}
+
 .loading {
   color: #666;
   font-style: italic;
 }
+
+.loading::before,
+.loading::after {
+  display: none;
+}
+
 .error {
   color: #e74c3c;
   font-weight: bold;
 }
+
+.error::before,
+.error::after {
+  display: none;
+}
+
 button {
-  background-color: #af4cae;
+  background-color: #00bcd4;
   color: white;
   border: none;
   padding: 15px 30px;
   font-size: 16px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  font-weight: 500;
 }
+
 button:hover {
-  background-color: #e9149b;
+  background-color: #00acc1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
