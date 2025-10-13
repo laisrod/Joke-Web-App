@@ -119,3 +119,41 @@ button:disabled {
   transform: none;
   box-shadow: none;
 }
+
+.rating-container {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.score-btn {
+  background-color: #e0e0e0;
+  color: #333;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.score-btn:hover:not(:disabled) {
+  background-color: #d4a700;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 167, 0, 0.3);
+}
+
+.score-btn.selected {
+  background-color: #c4a700;
+  color: white;
+  border-color: #a08800;
+  box-shadow: 0 0 0 3px rgba(196, 167, 0, 0.2);
+}
+
+.score-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
