@@ -1,60 +1,29 @@
-interface JokeResponse {
-    joke: string;
-}
-
 interface DadJokeResponse {
-    id: string;
     joke: string;
-    status: number;
 }
 
 class JokesApp {
     private jokeDisplay: HTMLElement;
     private nextJokeBtn: HTMLElement;
-    private isLoading: boolean = false;
+    private isLoading = false;
 
     constructor() {
         this.jokeDisplay = document.getElementById('joke-display') as HTMLElement;
         this.nextJokeBtn = document.getElementById('next-joke-btn') as HTMLElement;
         
-        this.initializeEventListeners();
-        this.loadFirstJoke();
+        this.nextJokeBtn.addEventListener('click', () => this.loadJoke());
+        
+        this.loadJoke();
     }
 
-    private initializeEventListeners(): void {
-        this.nextJokeBtn.addEventListener('click', () => {
-            this.loadNextJoke();
-        });
-    }
-
-    private async loadFirstJoke(): Promise<void> {
-        try {
-            await this.fetchAndDisplayJoke();
-        } catch (error) {
-            this.displayError('Erro ao carregar a primeira piada');
-            console.error('Error loading first joke:', error);
-        }
-    }
-
-    private async loadNextJoke(): Promise<void> {
+    private async loadJoke(): Promise<void> {
         if (this.isLoading) return;
         
-        try {
-            await this.fetchAndDisplayJoke();
-        } catch (error) {
-            this.displayError('Erro ao carregar próxima piada');
-            console.error('Error loading next joke:', error);
-        }
-    }
-
-    private async fetchAndDisplayJoke(): Promise<void> {
         this.setLoadingState(true);
         
         try {
             const response = await fetch('https://icanhazdadjoke.com/', {
-                headers: {
-                    'Accept': 'application/json'
-                }
+                headers: { 'Accept': 'application/json' }
             });
 
             if (!response.ok) {
@@ -62,12 +31,11 @@ class JokesApp {
             }
 
             const data: DadJokeResponse = await response.json();
-            
             this.displayJoke(data.joke);
-            console.log('Nova piada:', data.joke);
             
         } catch (error) {
-            throw error;
+            this.displayError('Erro ao carregar piada');
+            console.error('Error:', error);
         } finally {
             this.setLoadingState(false);
         }
@@ -85,17 +53,13 @@ class JokesApp {
 
     private setLoadingState(loading: boolean): void {
         this.isLoading = loading;
+        this.nextJokeBtn.toggleAttribute('disabled', loading);
         
         if (loading) {
             this.jokeDisplay.textContent = 'Carregando piada...';
             this.jokeDisplay.className = 'joke-text loading';
-            this.nextJokeBtn.setAttribute('disabled', 'true');
-        } else {
-            this.nextJokeBtn.removeAttribute('disabled');
         }
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new JokesApp();
-});
+document.addEventListener('DOMContentLoaded', () => new JokesApp());
