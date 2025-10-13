@@ -2,10 +2,18 @@ interface DadJokeResponse {
     joke: string;
 }
 
+interface JokeReport {
+    joke: string;
+    score: number;
+    date: string;
+}
+
 class JokesApp {
     private jokeDisplay: HTMLElement;
     private nextJokeBtn: HTMLElement;
     private isLoading = false;
+    private reportAcudits: JokeReport[] = [];
+    private currentJoke: string = '';
 
     constructor() {
         this.jokeDisplay = document.getElementById('joke-display') as HTMLElement;
@@ -42,6 +50,7 @@ class JokesApp {
     }
 
     private displayJoke(joke: string): void {
+        this.currentJoke = joke;
         this.jokeDisplay.textContent = joke;
         this.jokeDisplay.className = 'joke-text';
     }
