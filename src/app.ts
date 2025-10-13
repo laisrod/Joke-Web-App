@@ -14,12 +14,35 @@ class JokesApp {
     private isLoading = false;
     private reportAcudits: JokeReport[] = [];
     private currentJoke: string = '';
+    private currentScore: number | null = null;
 
     constructor() {
         this.jokeDisplay = document.getElementById('joke-display') as HTMLElement;
         this.nextJokeBtn = document.getElementById('next-joke-btn') as HTMLElement;
         
-        this.nextJokeBtn.addEventListener('click', () => this.loadJoke());
+        document.querySelectorAll('.score-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                const score = parseInt(target.getAttribute('data-score') || '0');
+                this.currentScore = score;
+                
+                document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('selected'));
+                target.classList.add('selected');
+            });
+        });
+        
+        this.nextJokeBtn.addEventListener('click', () => {
+            if (this.currentJoke && this.currentScore !== null) {
+                this.reportAcudits.push({
+                    joke: this.currentJoke,
+                    score: this.currentScore,
+                    date: new Date().toISOString()
+                });
+                console.log('reportAcudits:', this.reportAcudits);
+            }
+            
+            this.loadJoke();
+        });
         
         this.loadJoke();
     }
@@ -53,6 +76,10 @@ class JokesApp {
         this.currentJoke = joke;
         this.jokeDisplay.textContent = joke;
         this.jokeDisplay.className = 'joke-text';
+        
+        // Reseta a seleção de pontuação
+        this.currentScore = null;
+        document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('selected'));
     }
 
     private displayError(message: string): void {
