@@ -2,6 +2,10 @@ interface DadJokeResponse {
     joke: string;
 }
 
+interface ChuckNorrisResponse {
+    value: string;
+}
+
 interface JokeReport {
     joke: string;
     score: number;
@@ -24,6 +28,7 @@ class JokesApp {
     private reportAcudits: JokeReport[] = [];
     private currentJoke: string = '';
     private currentScore: number | null = null;
+    private jokeApiIndex = 0; // For alternating between APIs
 
     constructor() {
         this.jokeDisplay = document.getElementById('joke-display') as HTMLElement;
