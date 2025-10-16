@@ -28,7 +28,7 @@ class JokesApp {
     private reportAcudits: JokeReport[] = [];
     private currentJoke: string = '';
     private currentScore: number | null = null;
-    private jokeApiIndex = 0; // For alternating between APIs
+    private jokeApiIndex = 0;
 
     constructor() {
         this.jokeDisplay = document.getElementById('joke-display') as HTMLElement;
@@ -69,16 +69,32 @@ class JokesApp {
         this.setLoadingState(true);
         
         try {
-            const response = await fetch('https://icanhazdadjoke.com/', {
-                headers: { 'Accept': 'application/json' }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const useChuckNorris = Math.random() < 0.5;
+            console.log(`API Selection: ${useChuckNorris ? 'Chuck Norris' : 'Dad Jokes'}`);
+            
+            let joke: string;
+            try {
+                if (useChuckNorris) {
+                    joke = await this.loadChuckNorrisJoke();
+                } else {
+                    joke = await this.loadDadJoke();
+                }
+            } catch (firstError) {
+                console.warn('First API failed, trying fallback:', firstError);
+                
+                try {
+                    if (useChuckNorris) {
+                        joke = await this.loadDadJoke();
+                    } else {
+                        joke = await this.loadChuckNorrisJoke();
+                    }
+                } catch (secondError) {
+                    console.error('Both APIs failed:', secondError);
+                    throw new Error('All joke services are temporarily unavailable');
+                }
             }
-
-            const data: DadJokeResponse = await response.json();
-            this.displayJoke(data.joke);
+            
+            this.displayJoke(joke);
             
         } catch (error) {
             this.displayError('Error loading joke');
@@ -110,6 +126,30 @@ class JokesApp {
             this.jokeDisplay.textContent = 'Loading joke...';
             this.jokeDisplay.className = 'joke-text loading';
         }
+    }
+
+    private async loadDadJoke(): Promise<string> {
+        const response = await fetch('https://icanhazdadjoke.com/', {
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Dad joke API error: ${response.status}`);
+        }
+
+        const data: DadJokeResponse = await response.json();
+        return data.joke;
+    }
+
+    private async loadChuckNorrisJoke(): Promise<string> {
+        const response = await fetch('https://api.chucknorris.io/jokes/random');
+
+        if (!response.ok) {
+            throw new Error(`Chuck Norris API error: ${response.status}`);
+        }
+
+        const data: ChuckNorrisResponse = await response.json();
+        return data.value;
     }
 
     private async loadWeather(): Promise<void> {
@@ -237,5 +277,8 @@ class JokesApp {
         this.weatherCard.innerHTML = `<div class="weather-error">${message}</div>`;
     }
 }
+
+// Export for testing
+export { JokesApp };
 
 document.addEventListener('DOMContentLoaded', () => new JokesApp());

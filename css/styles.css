@@ -160,7 +160,6 @@ button:disabled {
   transform: none;
 }
 
-/* Weather Card Styles */
 .weather-card {
   background-color: white;
   padding: 20px 30px;
