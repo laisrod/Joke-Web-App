@@ -1,77 +1,112 @@
 import { JokesApp } from './app';
 
-const mocks = {
-    joke: { textContent: '', className: '', toggleAttribute: jest.fn() },
-    btn: { disabled: false, addEventListener: jest.fn(), toggleAttribute: jest.fn() },
-    weather: { innerHTML: '' }
+const screenElements = {
+    jokeDisplay: { 
+        textContent: '',
+        className: '',
+        toggleAttribute: jest.fn()
+    },
+    button: { 
+        disabled: false,
+        addEventListener: jest.fn(),
+        toggleAttribute: jest.fn()
+    },
+    weather: { 
+        innerHTML: ''
+    }
 };
 
 global.fetch = jest.fn((url: string) => {
-    const apis: any = {
-        'icanhazdadjoke': { joke: 'Piada teste' },
-        'chucknorris': { value: 'Piada Chuck' },
+    const apiResponses: any = {
+        'icanhazdadjoke': { joke: 'Test joke' },
+        'chucknorris': { value: 'Chuck Norris joke' },
         'open-meteo': { current: { temperature_2m: 25, relative_humidity_2m: 60, wind_speed_10m: 10, weather_code: 1 } },
-        'nominatim': { address: { city: 'SP' } }
+        'nominatim': { address: { city: 'São Paulo' } }
     };
-    const api = Object.keys(apis).find(k => url.includes(k));
-    return api 
-        ? Promise.resolve({ ok: true, json: () => Promise.resolve(apis[api]) })
-        : Promise.reject(new Error('Não achei'));
+    
+    let whichApi = null;
+    if (url.includes('icanhazdadjoke')) whichApi = 'icanhazdadjoke';
+    if (url.includes('chucknorris')) whichApi = 'chucknorris';
+    if (url.includes('open-meteo')) whichApi = 'open-meteo';
+    if (url.includes('nominatim')) whichApi = 'nominatim';
+    
+    if (whichApi) {
+        return Promise.resolve({ 
+            ok: true, 
+            json: () => Promise.resolve(apiResponses[whichApi]) 
+        });
+    }
+    
+    return Promise.reject(new Error('API not found'));
 }) as jest.Mock;
 
 Object.defineProperty(global.navigator, 'geolocation', {
-    value: { getCurrentPosition: jest.fn((ok: any) => ok({ coords: { latitude: -23, longitude: -46 } })) },
+    value: { 
+        getCurrentPosition: jest.fn((success: any) => {
+            success({ coords: { latitude: -23.5, longitude: -46.6 } });
+        })
+    },
     writable: true
 });
 
-document.getElementById = jest.fn((id: string) => 
-    ({ 'joke-display': mocks.joke, 'next-joke-btn': mocks.btn, 'weather-card': mocks.weather }[id])
-) as any;
+document.getElementById = jest.fn((id: string) => {
+    if (id === 'joke-display') return screenElements.jokeDisplay;
+    if (id === 'next-joke-btn') return screenElements.button;
+    if (id === 'weather-card') return screenElements.weather;
+    return null;
+}) as any;
+
 document.querySelectorAll = jest.fn(() => []) as any;
 
-describe('Testes', () => {
+describe('Jokes App Tests', () => {
     let app: JokesApp;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mocks.joke.textContent = '';
-        mocks.weather.innerHTML = '';
+        screenElements.jokeDisplay.textContent = '';
+        screenElements.weather.innerHTML = '';
         app = new JokesApp();
     });
 
-    test('Chuck Norris', async () => {
+    test('Should load Chuck Norris joke', async () => {
         jest.spyOn(Math, 'random').mockReturnValue(0.3);
         await app['loadJoke']();
-        expect(mocks.joke.textContent).toBe('Piada Chuck');
+        expect(screenElements.jokeDisplay.textContent).toBe('Chuck Norris joke');
     });
 
-    test('Dad Jokes', async () => {
+    test('Should load normal joke', async () => {
         jest.spyOn(Math, 'random').mockReturnValue(0.7);
         await app['loadJoke']();
-        expect(mocks.joke.textContent).toBe('Piada teste');
+        expect(screenElements.jokeDisplay.textContent).toBe('Test joke');
     });
 
-    test('Fallback funciona', async () => {
+    test('Should use fallback when Chuck Norris fails', async () => {
         jest.spyOn(Math, 'random').mockReturnValue(0.3);
-        (global.fetch as jest.Mock).mockImplementation((url: string) =>
-            url.includes('chucknorris')
-                ? Promise.reject(new Error('Erro'))
-                : Promise.resolve({ ok: true, json: () => Promise.resolve({ joke: 'Reserva' }) })
-        );
+        (global.fetch as jest.Mock).mockImplementation((url: string) => {
+            if (url.includes('chucknorris')) {
+                return Promise.reject(new Error('Chuck Norris unavailable'));
+            }
+            return Promise.resolve({ 
+                ok: true, 
+                json: () => Promise.resolve({ joke: 'Fallback joke' }) 
+            });
+        });
         await app['loadJoke']();
-        expect(mocks.joke.textContent).toBe('Reserva');
+        expect(screenElements.jokeDisplay.textContent).toBe('Fallback joke');
     });
 
-    test('Erro total', async () => {
-        (global.fetch as jest.Mock).mockRejectedValue(new Error('Tudo quebrou'));
+    test('Should show error when everything fails', async () => {
+        (global.fetch as jest.Mock).mockRejectedValue(new Error('All failed'));
         await app['loadJoke']();
-        expect(mocks.joke.textContent).toBe('Error loading joke');
+        expect(screenElements.jokeDisplay.textContent).toBe('Error loading joke');
     });
 
-    test('Erro geolocalização', async () => {
+    test('Should show error when location denied', async () => {
         (global.navigator.geolocation.getCurrentPosition as jest.Mock)
-            .mockImplementation((ok: any, err: any) => err({ code: 1 }));
+            .mockImplementation((success: any, error: any) => {
+                error({ code: 1 });
+            });
         await app['loadWeather']();
-        expect(mocks.weather.innerHTML).toContain('weather-error');
+        expect(screenElements.weather.innerHTML).toContain('weather-error');
     });
 });
