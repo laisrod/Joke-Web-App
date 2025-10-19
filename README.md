@@ -1,47 +1,57 @@
-# Jokes App - Produtividade com Humor
+# Jokes App - Ready to Laugh?
 
-Uma aplicação web em TypeScript que consome uma API de piadas para mostrar piadas aos trabalhadores antes de começarem o dia de trabalho.
+A modern TypeScript web application that displays jokes from multiple APIs to brighten your day with humor.
 
-## Funcionalidades
+## Features
 
--  Exibe uma piada aleatória ao carregar a página
--  Botão "Próxima Piada" para buscar novas piadas
--  Implementado com TypeScript
--  Consome API externa (icanhazdadjoke.com)
--  Interface responsiva e amigável
--  Tratamento de erros
--  Estados de carregamento
+- **Multi-API Joke System**: Alternates between Dad Jokes and Chuck Norris jokes
+- **Joke Rating System**: Users can rate jokes from 1-3 stars
+- **Weather Integration**: Shows current weather based on user location
+- **Responsive Design**: Works on desktop and mobile devices
+- **Error Handling**: Robust fallback mechanisms for API failures
+- **Unit Tests**: Comprehensive Jest test suite
 
-## Como executar
+## How to Run
 
-1. Instalar dependências:
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Compilar o TypeScript:
+2. Compile TypeScript:
 ```bash
 npm run build
 ```
 
-3. Abrir o arquivo `index.html` em um navegador web
+3. Open `index.html` in a web browser
 
-## Estrutura do projeto
+## Development
 
-- `src/app.ts` - Código principal da aplicação em TypeScript
-- `index.html` - Interface do usuário
-- `dist/app.js` - Código JavaScript compilado
-- `tsconfig.json` - Configuração do TypeScript
-- `package.json` - Dependências e scripts do projeto
+- **Watch mode**: `npm run dev` (auto-compiles on changes)
+- **Run tests**: `npm test`
+- **Test coverage**: `npm run test:coverage`
 
-## API utilizada
+## Project Structure
 
-A aplicação consome a API gratuita [icanhazdadjoke.com](https://icanhazdadjoke.com/) que não requer chave de autenticação.
+- `src/app.ts` - Main application logic in TypeScript
+- `src/app.test.ts` - Unit tests
+- `index.html` - User interface
+- `css/styles.css` - Styling
+- `dist/app.js` - Compiled JavaScript
+- `jest.config.js` - Test configuration
+- `tsconfig.json` - TypeScript configuration
 
-## Tecnologias utilizadas
+## APIs Used
+
+- **Dad Jokes**: [icanhazdadjoke.com](https://icanhazdadjoke.com/)
+- **Chuck Norris**: [api.chucknorris.io](https://api.chucknorris.io/)
+- **Weather**: [api.open-meteo.com](https://api.open-meteo.com/)
+
+## Technologies
 
 - TypeScript
-- HTML5
-- CSS3
-- Fetch API (ES6+)
-- Async/Await
+- HTML5 & CSS3
+- Fetch API
+- Geolocation API
+- Jest (testing)
+- ES6 Modules

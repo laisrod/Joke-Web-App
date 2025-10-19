@@ -31,9 +31,17 @@ class JokesApp {
     private jokeApiIndex = 0;
 
     constructor() {
+        console.log('JokesApp constructor started');
+        
         this.jokeDisplay = document.getElementById('joke-display') as HTMLElement;
         this.nextJokeBtn = document.getElementById('next-joke-btn') as HTMLElement;
         this.weatherCard = document.getElementById('weather-card') as HTMLElement;
+        
+        console.log('Elements found:', {
+            jokeDisplay: !!this.jokeDisplay,
+            nextJokeBtn: !!this.nextJokeBtn,
+            weatherCard: !!this.weatherCard
+        });
         
         document.querySelectorAll('.score-btn').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -59,11 +67,14 @@ class JokesApp {
             this.loadJoke();
         });
         
+        console.log('Starting loadWeather...');
         this.loadWeather();
+        console.log('Starting loadJoke...');
         this.loadJoke();
     }
 
     private async loadJoke(): Promise<void> {
+        console.log('loadJoke called');
         if (this.isLoading) return;
         
         this.setLoadingState(true);
@@ -153,6 +164,7 @@ class JokesApp {
     }
 
     private async loadWeather(): Promise<void> {
+        console.log('loadWeather called');
         try {
             const position = await this.getUserLocation();
             const { latitude, longitude } = position.coords;
@@ -165,15 +177,7 @@ class JokesApp {
             
             const weatherData = await weatherResponse.json();
             
-            let city = 'Your location';
-            try {
-                const locationResponse = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-                );
-                const locationData = await locationResponse.json();
-                city = locationData.address.city || locationData.address.town || locationData.address.village || 'Your location';
-            } catch (locationError) {
-            }
+            const city = 'Your location';
             
             this.displayWeather({
                 temperature: Math.round(weatherData.current.temperature_2m),
@@ -184,23 +188,41 @@ class JokesApp {
             });
             
         } catch (error) {
-            console.error('Weather loading failed:', error);
+            console.log('Weather loading failed:', error);
             const errorMessage = this.getErrorMessage(error);
             this.displayWeatherError(errorMessage);
         }
     }
+    
 
     private getUserLocation(): Promise<GeolocationPosition> {
         return new Promise((resolve, reject) => {
+            console.log('Checking geolocation support...');
+            
             if (!navigator.geolocation) {
+                console.log('Geolocation not supported by browser');
                 reject(new Error('Geolocation not supported'));
                 return;
             }
             
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                timeout: 10000,
-                enableHighAccuracy: false
-            });
+            console.log('Requesting user location...');
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    console.log('Location obtained:', position.coords);
+                    resolve(position);
+                },
+                (error) => {
+                    console.log('Geolocation error:', error);
+                    console.log('Error code:', error.code);
+                    console.log('Error message:', error.message);
+                    reject(error);
+                },
+                {
+                    timeout: 10000,
+                    enableHighAccuracy: false,
+                    maximumAge: 300000
+                }
+            );
         });
     }
 
@@ -243,19 +265,7 @@ class JokesApp {
         this.weatherCard.innerHTML = `
             <div class="weather-content">
                 <div class="weather-icon">${this.getWeatherIcon(weather.description)}</div>
-                <div class="weather-info">
-                    <p class="weather-temp">${weather.temperature}°C</p>
-                    <p class="weather-description">${weather.description}</p>
-                    <p class="weather-location">📍 ${weather.city}</p>
-                    <div class="weather-details">
-                        <div class="weather-detail">
-                            <span>💧 ${weather.humidity}%</span>
-                        </div>
-                        <div class="weather-detail">
-                            <span>💨 ${weather.windSpeed} km/h</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="weather-temp">${weather.temperature}°C</div>
             </div>
         `;
     }
@@ -263,11 +273,22 @@ class JokesApp {
     private getErrorMessage(error: unknown): string {
         if (!(error instanceof Error)) return 'Weather service error';
         
+        if (error.name === 'GeolocationPositionError') {
+            const geolocationError = error as unknown as GeolocationPositionError;
+            switch (geolocationError.code) {
+                case 1:
+                    return 'Location access denied - please allow location access to see weather';
+                case 2:
+                    return 'Unable to determine your location - please check your internet connection';
+                case 3:
+                    return 'Location request timed out - please try again';
+                default:
+                    return 'Location error - please try again';
+            }
+        }
+        
         const message = error.message;
         if (message.includes('Geolocation not supported')) return 'Geolocation not supported by your browser';
-        if (message.includes('Location permission denied')) return 'Location access denied - please allow location access to see weather';
-        if (message.includes('Location information unavailable')) return 'Unable to determine your location';
-        if (message.includes('Location request timed out')) return 'Location request timed out - please try again';
         if (message.includes('Weather API error')) return 'Weather service temporarily unavailable';
         
         return 'Unable to load weather information';
@@ -278,7 +299,9 @@ class JokesApp {
     }
 }
 
-// Export for testing
 export { JokesApp };
 
-document.addEventListener('DOMContentLoaded', () => new JokesApp());
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing JokesApp...');
+    new JokesApp();
+});
