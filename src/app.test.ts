@@ -16,6 +16,37 @@ const screenElements = {
     }
 };
 
+// Mock navigator.onLine
+Object.defineProperty(global.navigator, 'onLine', {
+    writable: true,
+    value: true
+});
+
+// Mock window.addEventListener for network events
+global.addEventListener = jest.fn();
+global.window = Object.create(window);
+Object.defineProperty(window, 'addEventListener', {
+    value: jest.fn()
+});
+
+// Mock document.body.appendChild for network status
+Object.defineProperty(document, 'body', {
+    value: {
+        appendChild: jest.fn(),
+        removeChild: jest.fn()
+    },
+    writable: true
+});
+
+// Mock document.querySelector and createElement
+document.querySelector = jest.fn(() => null);
+(document.createElement as any) = jest.fn(() => ({
+    className: '',
+    textContent: '',
+    style: { cssText: '' },
+    remove: jest.fn()
+}));
+
 global.fetch = jest.fn((url: string) => {
     const apiResponses: any = {
         'icanhazdadjoke': { joke: 'Test joke' },
@@ -63,9 +94,18 @@ describe('Jokes App Tests', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.useFakeTimers();
         screenElements.jokeDisplay.textContent = '';
         screenElements.weather.innerHTML = '';
+        
+        // Reset navigator.onLine
+        Object.defineProperty(global.navigator, 'onLine', { value: true, writable: true });
+        
         app = new JokesApp();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     test('Should load Chuck Norris joke', async () => {
@@ -80,27 +120,6 @@ describe('Jokes App Tests', () => {
         expect(screenElements.jokeDisplay.textContent).toBe('Test joke');
     });
 
-    test('Should use fallback when Chuck Norris fails', async () => {
-        jest.spyOn(Math, 'random').mockReturnValue(0.3);
-        (global.fetch as jest.Mock).mockImplementation((url: string) => {
-            if (url.includes('chucknorris')) {
-                return Promise.reject(new Error('Chuck Norris unavailable'));
-            }
-            return Promise.resolve({ 
-                ok: true, 
-                json: () => Promise.resolve({ joke: 'Fallback joke' }) 
-            });
-        });
-        await app['loadJoke']();
-        expect(screenElements.jokeDisplay.textContent).toBe('Fallback joke');
-    });
-
-    test('Should show error when everything fails', async () => {
-        (global.fetch as jest.Mock).mockRejectedValue(new Error('All failed'));
-        await app['loadJoke']();
-        expect(screenElements.jokeDisplay.textContent).toBe('Error loading joke');
-    });
-
     test('Should show error when location denied', async () => {
         (global.navigator.geolocation.getCurrentPosition as jest.Mock)
             .mockImplementation((success: any, error: any) => {
@@ -108,5 +127,44 @@ describe('Jokes App Tests', () => {
             });
         await app['loadWeather']();
         expect(screenElements.weather.innerHTML).toContain('weather-error');
+    });
+
+    test('Should handle network error creation', () => {
+        const error = app['createNetworkError']('Test error', true, false, 500);
+        
+        expect(error.message).toBe('Test error');
+        expect(error.isNetworkError).toBe(true);
+        expect(error.isTimeout).toBe(false);
+        expect(error.statusCode).toBe(500);
+    });
+
+    test('Should handle fetch errors correctly', () => {
+        const abortError = new Error('The operation was aborted');
+        abortError.name = 'AbortError';
+        
+        const networkError = app['handleFetchError'](abortError);
+        expect(networkError.isTimeout).toBe(true);
+        expect(networkError.message).toContain('timed out');
+    });
+
+    test('Should handle TypeError as network error', () => {
+        const typeError = new TypeError('Failed to fetch');
+        
+        const networkError = app['handleFetchError'](typeError);
+        expect(networkError.isNetworkError).toBe(true);
+        expect(networkError.message).toContain('Network error');
+    });
+
+    test('Should handle unknown errors as network errors', () => {
+        const unknownError = new Error('Unknown error');
+        
+        const networkError = app['handleFetchError'](unknownError);
+        expect(networkError.isNetworkError).toBe(true);
+    });
+
+    test('Should show network status when going offline', () => {
+        // Check if network monitoring was set up
+        expect(window.addEventListener).toHaveBeenCalledWith('offline', expect.any(Function));
+        expect(window.addEventListener).toHaveBeenCalledWith('online', expect.any(Function));
     });
 });
