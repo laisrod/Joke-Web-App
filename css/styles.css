@@ -242,6 +242,65 @@ button:disabled {
   transform: rotate(-30deg);
 }
 
+/* Network status indicator */
+.offline-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #e74c3c;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
+  z-index: 10000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Offline state styling */
+body.offline {
+  filter: grayscale(0.3);
+}
+
+body.offline .joke-card {
+  opacity: 0.8;
+}
+
+body.offline .weather-card {
+  opacity: 0.8;
+}
+
+/* Enhanced error styling */
+.joke-text.error {
+  color: #ffcccb;
+  background-color: rgba(231, 76, 60, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #e74c3c;
+}
+
+.weather-error {
+  color: #e74c3c;
+  font-size: 14px;
+  background-color: rgba(231, 76, 60, 0.1);
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #e74c3c;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .container {
@@ -272,5 +331,14 @@ button:disabled {
   
   .blob-decoration {
     display: none;
+  }
+  
+  .offline-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    padding: 8px 16px;
   }
 }
