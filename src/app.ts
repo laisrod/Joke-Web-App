@@ -20,6 +20,19 @@ interface WeatherData {
     city: string;
 }
 
+interface NetworkError extends Error {
+    isNetworkError: boolean;
+    isTimeout: boolean;
+    statusCode?: number;
+}
+
+interface RetryConfig {
+    maxRetries: number;
+    baseDelay: number;
+    maxDelay: number;
+    backoffFactor: number;
+}
+
 class JokesApp {
     private jokeDisplay: HTMLElement;
     private nextJokeBtn: HTMLElement;
@@ -29,6 +42,13 @@ class JokesApp {
     private currentJoke: string = '';
     private currentScore: number | null = null;
     private jokeApiIndex = 0;
+    private isOnline = navigator.onLine;
+    private retryConfig: RetryConfig = {
+        maxRetries: 3,
+        baseDelay: 1000,
+        maxDelay: 10000,
+        backoffFactor: 2
+    };
 
     constructor() {
         console.log('JokesApp constructor started');
@@ -42,6 +62,9 @@ class JokesApp {
             nextJokeBtn: !!this.nextJokeBtn,
             weatherCard: !!this.weatherCard
         });
+        
+        // Set up network status monitoring
+        this.setupNetworkMonitoring();
         
         document.querySelectorAll('.score-btn').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -73,6 +96,142 @@ class JokesApp {
         this.loadJoke();
     }
 
+    private setupNetworkMonitoring(): void {
+        window.addEventListener('online', () => {
+            console.log('Network connection restored');
+            this.isOnline = true;
+            this.showNetworkStatus('Connection restored', 'success');
+            // Retry failed requests when connection is restored
+            if (!this.currentJoke) {
+                this.loadJoke();
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('Network connection lost');
+            this.isOnline = false;
+            this.showNetworkStatus('Connection lost. Please check your internet connection or VPN.', 'error');
+        });
+    }
+
+    private showNetworkStatus(message: string, type: 'success' | 'error'): void {
+        // Remove existing status messages
+        const existingStatus = document.querySelector('.network-status');
+        if (existingStatus) {
+            existingStatus.remove();
+        }
+
+        const statusDiv = document.createElement('div');
+        statusDiv.className = `network-status ${type}`;
+        statusDiv.textContent = message;
+        statusDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            background-color: ${type === 'success' ? '#10b981' : '#ef4444'};
+        `;
+
+        document.body.appendChild(statusDiv);
+
+        // Auto-remove success messages after 3 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.remove();
+                }
+            }, 3000);
+        }
+    }
+
+    private async fetchWithRetry(url: string, options: RequestInit = {}, customRetryConfig?: Partial<RetryConfig>): Promise<Response> {
+        const config = { ...this.retryConfig, ...customRetryConfig };
+        let lastError: NetworkError;
+
+        for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+            try {
+                // Check if we're offline before making the request
+                if (!this.isOnline) {
+                    throw this.createNetworkError('Network disconnected', true, false);
+                }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                return response;
+
+            } catch (error) {
+                const networkError = this.handleFetchError(error);
+                lastError = networkError;
+
+                console.warn(`Attempt ${attempt + 1}/${config.maxRetries + 1} failed:`, networkError.message);
+
+                // Don't retry if it's not a network error or if we've exhausted retries
+                if (!networkError.isNetworkError || attempt === config.maxRetries) {
+                    break;
+                }
+
+                // Calculate delay with exponential backoff
+                const delay = Math.min(
+                    config.baseDelay * Math.pow(config.backoffFactor, attempt),
+                    config.maxDelay
+                );
+
+                console.log(`Retrying in ${delay}ms...`);
+                await this.delay(delay);
+            }
+        }
+
+        throw lastError!;
+    }
+
+    private createNetworkError(message: string, isNetworkError: boolean, isTimeout: boolean, statusCode?: number): NetworkError {
+        const error = new Error(message) as NetworkError;
+        error.isNetworkError = isNetworkError;
+        error.isTimeout = isTimeout;
+        error.statusCode = statusCode;
+        return error;
+    }
+
+    private handleFetchError(error: unknown): NetworkError {
+        if (error instanceof Error) {
+            // Handle AbortError (timeout)
+            if (error.name === 'AbortError') {
+                return this.createNetworkError('Request timed out - please check your connection', true, true);
+            }
+
+            // Handle TypeError (network errors)
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                return this.createNetworkError('Network error - please check your internet connection or VPN', true, false);
+            }
+
+            // Handle other network-related errors
+            if (error.message.includes('NetworkError') || 
+                error.message.includes('Failed to fetch') ||
+                error.message.includes('Network request failed')) {
+                return this.createNetworkError('Connection failed - please check your internet connection or VPN', true, false);
+            }
+        }
+
+        // Default to treating unknown errors as network errors
+        return this.createNetworkError('Network request failed', true, false);
+    }
+
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     private async loadJoke(): Promise<void> {
         console.log('loadJoke called');
         if (this.isLoading) return;
@@ -101,14 +260,28 @@ class JokesApp {
                     }
                 } catch (secondError) {
                     console.error('Both APIs failed:', secondError);
-                    throw new Error('All joke services are temporarily unavailable');
+                    const networkError = secondError as NetworkError;
+                    if (networkError.isNetworkError) {
+                        throw this.createNetworkError('Connection failed. Please check your internet connection or VPN.', true, networkError.isTimeout);
+                    } else {
+                        throw this.createNetworkError('All joke services are temporarily unavailable', false, false);
+                    }
                 }
             }
             
             this.displayJoke(joke);
             
         } catch (error) {
-            this.displayError('Error loading joke');
+            const networkError = error as NetworkError;
+            if (networkError.isNetworkError) {
+                if (networkError.isTimeout) {
+                    this.displayError('Request timed out. Please check your connection and try again.');
+                } else {
+                    this.displayError('Connection failed. Please check your internet connection or VPN.');
+                }
+            } else {
+                this.displayError('Error loading joke. Please try again.');
+            }
             console.error('Error:', error);
         } finally {
             this.setLoadingState(false);
@@ -140,12 +313,12 @@ class JokesApp {
     }
 
     private async loadDadJoke(): Promise<string> {
-        const response = await fetch('https://icanhazdadjoke.com/', {
+        const response = await this.fetchWithRetry('https://icanhazdadjoke.com/', {
             headers: { 'Accept': 'application/json' }
         });
 
         if (!response.ok) {
-            throw new Error(`Dad joke API error: ${response.status}`);
+            throw this.createNetworkError(`Dad joke API error: ${response.status}`, false, false, response.status);
         }
 
         const data: DadJokeResponse = await response.json();
@@ -153,10 +326,10 @@ class JokesApp {
     }
 
     private async loadChuckNorrisJoke(): Promise<string> {
-        const response = await fetch('https://api.chucknorris.io/jokes/random');
+        const response = await this.fetchWithRetry('https://api.chucknorris.io/jokes/random');
 
         if (!response.ok) {
-            throw new Error(`Chuck Norris API error: ${response.status}`);
+            throw this.createNetworkError(`Chuck Norris API error: ${response.status}`, false, false, response.status);
         }
 
         const data: ChuckNorrisResponse = await response.json();
@@ -169,11 +342,13 @@ class JokesApp {
             const position = await this.getUserLocation();
             const { latitude, longitude } = position.coords;
             
-            const weatherResponse = await fetch(
+            const weatherResponse = await this.fetchWithRetry(
                 `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`
             );
             
-            if (!weatherResponse.ok) throw new Error('Weather API error');
+            if (!weatherResponse.ok) {
+                throw this.createNetworkError(`Weather API error: ${weatherResponse.status}`, false, false, weatherResponse.status);
+            }
             
             const weatherData = await weatherResponse.json();
             
@@ -285,6 +460,15 @@ class JokesApp {
                 default:
                     return 'Location error - please try again';
             }
+        }
+        
+        // Handle network errors
+        const networkError = error as NetworkError;
+        if (networkError.isNetworkError) {
+            if (networkError.isTimeout) {
+                return 'Weather request timed out - please check your connection';
+            }
+            return 'Connection failed - please check your internet connection or VPN';
         }
         
         const message = error.message;
