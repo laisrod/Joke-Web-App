@@ -242,7 +242,6 @@ button:disabled {
   transform: rotate(-30deg);
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .container {
     padding: 10px;

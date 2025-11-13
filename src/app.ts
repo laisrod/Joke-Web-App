@@ -25,10 +25,10 @@ class JokesApp {
     private nextJokeBtn: HTMLElement;
     private weatherCard: HTMLElement;
     private isLoading = false;
-    private reportAcudits: JokeReport[] = [];
+// Array privado para armazenar todas as avaliações
+    private reportAcudits: JokeReport[] = []; 
     private currentJoke: string = '';
     private currentScore: number | null = null;
-    private jokeApiIndex = 0;
 
     constructor() {
         console.log('JokesApp constructor started');
@@ -43,6 +43,7 @@ class JokesApp {
             weatherCard: !!this.weatherCard
         });
         
+        // Lógica de Implementação - Inicialização dos Event Listeners
         document.querySelectorAll('.score-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 const target = e.target as HTMLElement;
@@ -54,6 +55,7 @@ class JokesApp {
             });
         });
         
+        // Salvamento da Avaliação
         this.nextJokeBtn.addEventListener('click', () => {
             if (this.currentJoke && this.currentScore !== null) {
                 this.reportAcudits.push({
@@ -72,6 +74,8 @@ class JokesApp {
         console.log('Starting loadJoke...');
         this.loadJoke();
     }
+
+    // metodo principal
 
     private async loadJoke(): Promise<void> {
         console.log('loadJoke called');
@@ -115,6 +119,8 @@ class JokesApp {
         }
     }
 
+    // Exibição da Piada
+
     private displayJoke(joke: string): void {
         this.currentJoke = joke;
         this.jokeDisplay.textContent = joke;
@@ -129,6 +135,7 @@ class JokesApp {
         this.jokeDisplay.className = 'joke-text error';
     }
 
+    // Estados de Carregamento
     private setLoadingState(loading: boolean): void {
         this.isLoading = loading;
         this.nextJokeBtn.toggleAttribute('disabled', loading);
@@ -139,6 +146,7 @@ class JokesApp {
         }
     }
 
+// Carregamento de Dad Jokes
     private async loadDadJoke(): Promise<string> {
         const response = await fetch('https://icanhazdadjoke.com/', {
             headers: { 'Accept': 'application/json' }
@@ -152,6 +160,8 @@ class JokesApp {
         return data.joke;
     }
 
+    // Carregamento de Chuck Norris Jokes
+
     private async loadChuckNorrisJoke(): Promise<string> {
         const response = await fetch('https://api.chucknorris.io/jokes/random');
 
@@ -162,6 +172,8 @@ class JokesApp {
         const data: ChuckNorrisResponse = await response.json();
         return data.value;
     }
+
+    // Método Principal: `loadWeather()` - clima
 
     private async loadWeather(): Promise<void> {
         console.log('loadWeather called');
@@ -194,7 +206,7 @@ class JokesApp {
         }
     }
     
-
+    // Obtenção de Localização
     private getUserLocation(): Promise<GeolocationPosition> {
         return new Promise((resolve, reject) => {
             console.log('Checking geolocation support...');
@@ -226,6 +238,7 @@ class JokesApp {
         });
     }
 
+    // Conversão de Código de Clima
     private getWeatherDescription(code: number): string {
         const weatherCodes: { [key: number]: string } = {
             0: 'Clear sky',
@@ -261,6 +274,7 @@ class JokesApp {
         return '🌤️';
     }
 
+    // exibição do clima
     private displayWeather(weather: WeatherData): void {
         this.weatherCard.innerHTML = `
             <div class="weather-content">
@@ -270,6 +284,7 @@ class JokesApp {
         `;
     }
 
+    // tratamento de erros de clima
     private getErrorMessage(error: unknown): string {
         if (!(error instanceof Error)) return 'Weather service error';
         
@@ -286,7 +301,7 @@ class JokesApp {
                     return 'Location error - please try again';
             }
         }
-        
+        // outros tipos de erros
         const message = error.message;
         if (message.includes('Geolocation not supported')) return 'Geolocation not supported by your browser';
         if (message.includes('Weather API error')) return 'Weather service temporarily unavailable';
@@ -300,8 +315,3 @@ class JokesApp {
 }
 
 export { JokesApp };
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing JokesApp...');
-    new JokesApp();
-});
