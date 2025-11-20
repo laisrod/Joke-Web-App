@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "build:vercel": "node scripts/build-vercel.js",
     "dev": "tsc --watch",
     "start": "npm run build && (lsof -ti:3000 | xargs kill -9 2>/dev/null || true) && npx http-server . -p 3000 -o",
     "serve": "(lsof -ti:3000 | xargs kill -9 2>/dev/null || true) && npx http-server . -p 3000 -o",
