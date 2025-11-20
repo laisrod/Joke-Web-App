@@ -13,8 +13,6 @@ class JokesApp {
     private currentJoke: string = '';
 
     constructor() {
-        console.log('JokesApp constructor started');
-        
         this.uiService = new UIService();     
         this.ratingService = new RatingService();     
         
@@ -46,7 +44,6 @@ class JokesApp {
     }
 
     private async loadJoke(): Promise<void> {
-        console.log('loadJoke called');
         if (this.isLoading) return;
         
         this.isLoading = true;
@@ -58,7 +55,6 @@ class JokesApp {
             this.uiService.displayJoke(joke);
         } catch (error) {
             this.uiService.displayError(MESSAGES.ERROR_LOADING_JOKE);
-            console.error('Error:', error);
         } finally {
             this.isLoading = false;
             this.uiService.setLoadingState(false);
@@ -66,13 +62,11 @@ class JokesApp {
     }
 
     private async loadWeather(): Promise<void> {
-        console.log('loadWeather called');
         try {
             const weatherData = await WeatherService.loadWeather();
             const html = WeatherService.renderWeather(weatherData);
             this.uiService.displayWeather(html);
         } catch (error) {
-            console.log('Weather loading failed:', error);
             const errorMessage = WeatherService.getErrorMessage(error);
             const errorHtml = WeatherService.renderWeatherError(errorMessage);
             this.uiService.displayWeather(errorHtml);

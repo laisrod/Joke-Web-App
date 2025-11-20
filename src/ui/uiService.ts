@@ -10,12 +10,6 @@ class UIService {
         this.jokeDisplay = document.getElementById(DOM_IDS.JOKE_DISPLAY) as HTMLElement;
         this.nextJokeBtn = document.getElementById(DOM_IDS.NEXT_JOKE_BTN) as HTMLElement;
         this.weatherCard = document.getElementById(DOM_IDS.WEATHER_CARD) as HTMLElement;
-        
-        console.log('Elements found:', {
-            jokeDisplay: !!this.jokeDisplay,
-            nextJokeBtn: !!this.nextJokeBtn,
-            weatherCard: !!this.weatherCard
-        });
     }
 
     setupScoreButtons(onScoreClick: (score: number) => void): void {
