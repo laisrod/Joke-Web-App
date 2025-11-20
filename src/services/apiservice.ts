@@ -65,53 +65,36 @@ async function fetchWeather(latitude: number, longitude: number): Promise<Weathe
 }
 
 async function fetchCityName(latitude: number, longitude: number): Promise<string> {
-    try {
-        const url = `${API_URLS.GEOCODING}?${new URLSearchParams({
-            latitude: latitude.toString(),
-            longitude: longitude.toString(),
-            localityLanguage: 'en'
-        })}`;
-        
-        const data = await fetchData<GeocodingResponse>(
-            url,
-            'Geocoding',
-            { headers: { 'Accept': 'application/json' } }
-        );
-        
-        return data.city 
-            || data.locality
-            || data.localityInfo?.administrative?.find(a => a.order === 6)?.name
-            || data.localityInfo?.administrative?.find(a => a.order === 4)?.name
-            || data.principalSubdivision
-            || 'Unknown location';
-    } catch (error) {
-        console.error('Error fetching city name:', error);
-        throw error;
-    }
+    const url = `${API_URLS.GEOCODING}?${new URLSearchParams({
+        latitude: latitude.toString(),
+        longitude: longitude.toString(),
+        localityLanguage: 'en'
+    })}`;
+    
+    const data = await fetchData<GeocodingResponse>(
+        url,
+        'Geocoding',
+        { headers: { 'Accept': 'application/json' } }
+    );
+    
+    return data.city 
+        || data.locality
+        || data.localityInfo?.administrative?.find(a => a.order === 6)?.name
+        || data.localityInfo?.administrative?.find(a => a.order === 4)?.name
+        || data.principalSubdivision
+        || 'Unknown location';
 }
 
 function getUserLocation(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
-        console.log('Checking geolocation support...');
-
         if (!navigator.geolocation) {
-            console.log('Geolocation not supported by browser');
             reject(new Error('Geolocation not supported'));
             return;
         }
 
-        console.log('Requesting user location...');
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                console.log('Location obtained:', position.coords);
-                resolve(position);
-            },
-            (error) => {
-                console.log('Geolocation error:', error);
-                console.log('Error code:', error.code);
-                console.log('Error message:', error.message);
-                reject(error);
-            },
+            (position) => resolve(position),
+            (error) => reject(error),
             {
                 timeout: GEOLOCATION_CONFIG.TIMEOUT,
                 enableHighAccuracy: GEOLOCATION_CONFIG.ENABLE_HIGH_ACCURACY,

@@ -26,7 +26,6 @@ class RatingService {
             score: score,
             date: new Date().toISOString()
         });
-        console.log('reportAcudits:', this.reports);
     }
 
     resetScore(): void {
