@@ -29,41 +29,41 @@ interface GeocodingResponse {
 }
 
 class ApiService {
-    static async fetchDadJoke(): Promise<string> {
-        const response = await fetch(API_URLS.DAD_JOKES, {
-            headers: API_HEADERS.DAD_JOKES
-        });
+    // Função genérica para fazer requisições HTTP (DRY - Don't Repeat Yourself)
+    private static async fetchData<T>(
+        url: string, 
+        apiName: string, 
+        options?: RequestInit
+    ): Promise<T> {
+        const response = await fetch(url, options);
 
         if (!response.ok) {
-            throw new Error(`Dad joke API error: ${response.status}`);
+            throw new Error(`${apiName} API error: ${response.status}`);
         }
 
-        const data: DadJokeResponse = await response.json();
+        return await response.json();
+    }
+
+    static async fetchDadJoke(): Promise<string> {
+        const data = await this.fetchData<DadJokeResponse>(
+            API_URLS.DAD_JOKES,
+            'Dad joke',
+            { headers: API_HEADERS.DAD_JOKES }
+        );
         return data.joke;
     }
 
     static async fetchChuckNorrisJoke(): Promise<string> {
-        const response = await fetch(API_URLS.CHUCK_NORRIS);
-
-        if (!response.ok) {
-            throw new Error(`Chuck Norris API error: ${response.status}`);
-        }
-
-        const data: ChuckNorrisResponse = await response.json(); 
-        return data.value; // Retorna a piada
+        const data = await this.fetchData<ChuckNorrisResponse>(
+            API_URLS.CHUCK_NORRIS,
+            'Chuck Norris'
+        );
+        return data.value;
     }
 
-
     static async fetchWeather(latitude: number, longitude: number): Promise<WeatherApiResponse> {
-        const response = await fetch(
-            `${API_URLS.WEATHER}?latitude=${latitude}&longitude=${longitude}&current=${WEATHER_API_PARAMS.CURRENT}&timezone=${WEATHER_API_PARAMS.TIMEZONE}`
-        );
-
-        if (!response.ok) {
-            throw new Error(`Weather API error: ${response.status}`);
-        }
-
-        return await response.json();
+        const url = `${API_URLS.WEATHER}?latitude=${latitude}&longitude=${longitude}&current=${WEATHER_API_PARAMS.CURRENT}&timezone=${WEATHER_API_PARAMS.TIMEZONE}`;
+        return await this.fetchData<WeatherApiResponse>(url, 'Weather');
     }
 
     static async fetchCityName(latitude: number, longitude: number): Promise<string> {
@@ -72,24 +72,20 @@ class ApiService {
                 latitude: latitude.toString(),
                 longitude: longitude.toString(),
                 localityLanguage: 'en'
-              })}`;
-            const response = await fetch(url, {
-                headers: { 'Accept': 'application/json' }
-            });
+            })}`;
             
-            if (!response.ok) {
-                throw new Error(`Geocoding API error: ${response.status}`);
-            }
-            
-            const data: GeocodingResponse = await response.json();
+            const data = await this.fetchData<GeocodingResponse>(
+                url,
+                'Geocoding',
+                { headers: { 'Accept': 'application/json' } }
+            );
             
             return data.city 
                 || data.locality
-                || data.localityInfo?.administrative?.find(a => a.order === 6)?.name  // Município
-                || data.localityInfo?.administrative?.find(a => a.order === 4)?.name  // Estado
-                || data.principalSubdivision //Estado ou província
+                || data.localityInfo?.administrative?.find(a => a.order === 6)?.name
+                || data.localityInfo?.administrative?.find(a => a.order === 4)?.name
+                || data.principalSubdivision
                 || 'Unknown location';
-                
         } catch (error) {
             console.error('Error fetching city name:', error);
             throw error;
