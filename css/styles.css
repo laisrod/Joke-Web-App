@@ -176,8 +176,9 @@ button:disabled {
 
 .weather-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
 }
 
 .weather-icon {
@@ -189,6 +190,13 @@ button:disabled {
   font-weight: bold;
   color: #333;
   margin: 0;
+}
+
+.weather-city {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  text-align: center;
 }
 
 .weather-description {

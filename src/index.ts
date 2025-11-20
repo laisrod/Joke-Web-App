@@ -1,6 +1,5 @@
-import { JokesApp } from './app';
+import { JokesApp } from './app.js';
 
-// Inicialização do DOM
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing JokesApp...');
     new JokesApp();
